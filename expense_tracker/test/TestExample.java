@@ -197,7 +197,7 @@ public class TestExample {
     //filter by amount
     @Test
     public void testFilterByAmount() {
-	// This is new test case 3: For the Model
+	// This is new test case 3: For the View
 	//
 	// Setup
 	double amountToFilterBy = 50.0;
@@ -206,7 +206,7 @@ public class TestExample {
         controller.addTransaction(40.00, "food");
 
 	// Check pre-conditions
-	assertEquals(3, model.getTransactions().size());
+	assertEquals(3, view.getTableModel().getRowCount() - 1);
 
 	// Call unit under test
 	controller.setFilter(new AmountFilter(amountToFilterBy));
@@ -222,7 +222,7 @@ public class TestExample {
     //filter by category
     @Test
     public void testFilterByCategory() {
-	// This is new test case 4: For the Model
+	// This is new test case 4: For the View
 	//
 	// Setup
 	String categoryToFilterBy = "food";
@@ -231,7 +231,7 @@ public class TestExample {
         controller.addTransaction(40.00, categoryToFilterBy);
 	
 	// Check pre-conditions
-	assertEquals(3, model.getTransactions().size());
+	assertEquals(3, view.getTableModel().getRowCount() - 1);
 
 	// Call the unit under test
 	controller.setFilter(new CategoryFilter(categoryToFilterBy));
