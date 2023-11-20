@@ -81,6 +81,8 @@ public class TestExample {
 
     @Test
     public void testAddTransaction() {
+	// This is focused on the Model
+	//
         // Pre-condition: List of transactions is empty
         assertEquals(0, model.getTransactions().size());
     
@@ -104,7 +106,9 @@ public class TestExample {
 
     @Test
     public void testRemoveTransaction() {
-        // Pre-condition: List of transactions is empty
+	// This is focused on the Model
+	//
+	// Pre-condition: List of transactions is empty
         assertEquals(0, model.getTransactions().size());
     
         // Perform the action: Add and remove a transaction
