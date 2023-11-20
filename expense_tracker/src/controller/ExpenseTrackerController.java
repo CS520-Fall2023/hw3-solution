@@ -72,4 +72,19 @@ public class ExpenseTrackerController {
       view.toFront();}
 
   }
+
+  //for undoing any selected transaction
+  public boolean undoTransaction(int rowIndex) {
+    if (rowIndex >= 0 && rowIndex < model.getTransactions().size()) {
+      Transaction removedTransaction = model.getTransactions().get(rowIndex);
+      model.removeTransaction(removedTransaction);
+      view.getTableModel().removeRow(rowIndex);
+      refresh();
+      // The undo was allowed.
+      return true;
+    }
+
+    // The undo was disallowed.
+    return false;
+  }    
 }
