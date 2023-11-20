@@ -3,6 +3,7 @@ package view;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -10,6 +11,7 @@ import java.text.NumberFormat;
 
 import model.Transaction;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ExpenseTrackerView extends JFrame {
@@ -196,6 +198,28 @@ public class ExpenseTrackerView extends JFrame {
       });
 
       transactionsTable.repaint();
+  }
+
+  public List<Transaction> getDisplayedTransactions() {
+      // To support testability
+      List<Transaction> displayedTransactions = new ArrayList<>();
+      for (int i = 0; i < transactionsTable.getRowCount(); i++) {
+	  TableCellRenderer renderer = transactionsTable.getCellRenderer(i, 0);
+	  Component component = transactionsTable.prepareRenderer(renderer, i, 0);
+	  
+	  // Check if the row is highlighted based on the background color
+	  if (component.getBackground().equals(new Color(173, 255, 168))) {
+	      Object amountObj = transactionsTable.getValueAt(i, 1); // Assuming amount is in column 1
+	      Object categoryObj = transactionsTable.getValueAt(i, 2); // Assuming category is in column 2
+	      
+	      if (amountObj != null && categoryObj != null) {
+		  double amount = (double) amountObj;
+		  String category = (String) categoryObj;
+		  displayedTransactions.add(new Transaction(amount, category));
+	      }
+	  }
+      }
+      return displayedTransactions;
   }
 
   // Method to add action listener to the undo button

@@ -1,5 +1,6 @@
 // package test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -7,12 +8,17 @@ import java.util.Date;
 import java.util.List;
 import java.text.ParseException;
 
+import javax.swing.table.TableModel;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import controller.ExpenseTrackerController;
 import model.ExpenseTrackerModel;
 import model.Transaction;
+import model.Filter.AmountFilter;
+import model.Filter.CategoryFilter;
 import view.ExpenseTrackerView;
 
 
@@ -58,6 +64,20 @@ public class TestExample {
         assertTrue(nowDate.getTime() - transactionDate.getTime() < 60000);
     }
 
+    public void checkTransactionInView(Transaction transaction, int row) {
+	TableModel viewModel = view.getTableModel();
+	double amount = Double.parseDouble(viewModel.getValueAt(row, 1).toString());
+	assertEquals(transaction.getAmount(), amount, 0.01);
+        assertEquals(transaction.getCategory(), viewModel.getValueAt(row, 2));
+	assertEquals(transaction.getTimestamp(), viewModel.getValueAt(row, 3));
+    }
+
+    public void checkTotalCostInView(double totalCost) {
+	TableModel viewModel = view.getTableModel();
+	// Retrieve the contents of the last row
+	double totalCostInView = Double.parseDouble(viewModel.getValueAt(viewModel.getRowCount() - 1, 3).toString());
+	assertEquals(totalCost, totalCostInView, 0.01); 
+    }
 
     @Test
     public void testAddTransaction() {
@@ -111,6 +131,181 @@ public class TestExample {
         // Check the total cost after removing the transaction
         double totalCost = getTotalCost();
         assertEquals(0.00, totalCost, 0.01);
+    }
+
+    @Test
+    public void testAddTransactionInView() {
+	// This is new test case 1: For the View
+	//
+        // Pre-condition: List of transactions is empty
+	TableModel viewModel = view.getTableModel();
+        assertEquals(0, viewModel.getRowCount());
+    
+        // Perform the action: Add a transaction
+	double amount = 50.0;
+	String category = "food";
+        assertTrue(controller.addTransaction(amount, category));
+    
+        // Post-condition: List of transactions contains only
+	//                 the added transaction and the total cost.
+        assertEquals(2, viewModel.getRowCount());
+    
+        // Check the contents of the list
+	Transaction firstTransaction = model.getTransactions().get(0);
+	int firstRow = 0;
+	checkTransactionInView(firstTransaction, firstRow);
+	
+	// Check the total amount
+        checkTotalCostInView(50.0);
+    }
+
+    @Test
+    public void testUndoAddTransactionInView() {
+	// This is new test case 6: For the View
+	//
+        // Pre-condition: List of transactions is empty
+	TableModel viewModel = view.getTableModel();
+        assertEquals(0, viewModel.getRowCount());
+    
+        // Perform the action: Add and remove a transaction
+	double amount = 50.0;
+	String category = "food";
+        assertTrue(controller.addTransaction(amount, category));
+    
+        // Pre-condition: List of transactions contains only the
+	//                added transaction and the total cost
+        assertEquals(1, model.getTransactions().size());
+	Transaction firstTransaction = model.getTransactions().get(0);
+	checkTransactionInView(firstTransaction, 0);
+	checkTotalCostInView(amount);
+	
+        // Perform the action: Remove the transaction
+        boolean statusCode = controller.undoTransaction(0);
+	assertTrue(statusCode);
+	
+        // Post-condition: List of transactions is empty
+	assertEquals(1, viewModel.getRowCount());
+    
+        // Check the total cost after removing the transaction
+        checkTotalCostInView(0.00);
+    }
+
+    //filter by amount
+    @Test
+    public void testFilterByAmount() {
+	// This is new test case 3: For the Model
+	//
+	// Setup
+	double amountToFilterBy = 50.0;
+        controller.addTransaction(amountToFilterBy, "food");
+        controller.addTransaction(30.00, "entertainment");
+        controller.addTransaction(40.00, "food");
+
+	// Check pre-conditions
+	assertEquals(3, model.getTransactions().size());
+
+	// Call unit under test
+	controller.setFilter(new AmountFilter(amountToFilterBy));
+        controller.applyFilter();
+
+	// Check the post-conditions
+        List<Transaction> displayedTransactions = view.getDisplayedTransactions();
+        assertEquals(1, displayedTransactions.size());
+        assertEquals(amountToFilterBy, displayedTransactions.get(0).getAmount(), 0.01);
+    } 
+
+
+    //filter by category
+    @Test
+    public void testFilterByCategory() {
+	// This is new test case 4: For the Model
+	//
+	// Setup
+	String categoryToFilterBy = "food";
+        controller.addTransaction(50.00, categoryToFilterBy);
+        controller.addTransaction(30.00, "entertainment");
+        controller.addTransaction(40.00, categoryToFilterBy);
+	
+	// Check pre-conditions
+	assertEquals(3, model.getTransactions().size());
+
+	// Call the unit under test
+	controller.setFilter(new CategoryFilter(categoryToFilterBy));
+        controller.applyFilter();
+
+	// Check the post-conditions
+        List<Transaction> displayedTransactions = view.getDisplayedTransactions();
+        assertEquals(2, displayedTransactions.size());
+	for (Transaction currDisplayedTransaction : displayedTransactions) {
+	    assertEquals(categoryToFilterBy, currDisplayedTransaction.getCategory());
+	}
+    }
+
+    @Test
+    public void testUndoNoTransactions() {
+	// This is new test case 5: For the Controller
+	//
+	// Check pre-conditions
+	assertEquals(0, model.getTransactions().size());
+
+	// Call the unit under test
+	boolean statusCode = controller.undoTransaction(0);
+
+	// Check the post-conditions
+	assertEquals(statusCode, false);
+	assertEquals(0, model.getTransactions().size());
+    }
+
+    @Test
+    public void testUndoAddTransaction() {
+      // This is new test case 6: For the Controller
+      //
+      // Setup
+      controller.addTransaction(50.00, "food");
+
+      // Check pre-conditions
+      assertEquals(1, model.getTransactions().size());
+
+      // Call the unit under test
+      boolean statusCode = controller.undoTransaction(0);
+      
+      // Check the post-conditions
+      assertEquals(statusCode, true);
+      
+      // After undoing the transaction, check if the transaction is removed
+      assertEquals(0, model.getTransactions().size());
+      assertEquals(0.0, getTotalCost(), 0.01);
+    }
+    
+    @Test
+    public void testInvalidInputHandling() {
+	// This is new test case 2: For the Controller
+	//
+	// Check pre-conditions
+	assertEquals(0, model.getTransactions().size());
+	assertEquals(0.00, getTotalCost(), 0.01);
+	// Call the unit under test
+        boolean didAddTransaction = controller.addTransaction(0.00, "InvalidCategory");
+	// Check post-conditions (i.e. nothing changed)
+	assertFalse(didAddTransaction);
+        assertEquals(0, model.getTransactions().size());
+        assertEquals(0.00, getTotalCost(), 0.01);
+
+	// See above for the pre-conditions
+	//
+	// Call the unit under test
+	boolean didAddTransaction2 = controller.addTransaction(50.00, "");
+	// Check the post-conditions
+	assertFalse(didAddTransaction2);
+        assertEquals(0, model.getTransactions().size());
+        assertEquals(0.00, getTotalCost(), 0.01);
+    }
+
+    @After
+    public void tearDown() {
+        model = null;
+        view = null;
+        controller = null;
     }
     
 }
