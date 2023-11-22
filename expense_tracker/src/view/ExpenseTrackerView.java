@@ -188,7 +188,10 @@ public class ExpenseTrackerView extends JFrame {
           public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
                                                         boolean hasFocus, int row, int column) {
               Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-              if (rowIndexes.contains(row)) {
+	      if (isSelected) {
+		  c.setBackground(Color.BLUE);
+	      }
+              else if (rowIndexes.contains(row)) {
                   c.setBackground(new Color(173, 255, 168)); // Light green
               } else {
                   c.setBackground(table.getBackground());
