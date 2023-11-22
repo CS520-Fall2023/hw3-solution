@@ -168,7 +168,10 @@ public class ExpenseTrackerView extends JFrame {
       // Add total row
       Object[] totalRow = {"Total", null, null, totalCost};
       model.addRow(totalRow);
-  
+
+      // Clear the previous highlighting
+      transactionsTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer());
+      
       // Fire table update
       transactionsTable.updateUI();
   
